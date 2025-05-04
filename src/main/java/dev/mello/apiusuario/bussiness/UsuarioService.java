@@ -36,6 +36,14 @@ public class UsuarioService {
                 .orElseThrow(() -> new NotFoundException("Usuário com email: " +  email + " não encontrado"));
     }
 
+    public void deleteById(Long id) {
+        if (repository.existsById(id)) {
+            deleteById(id);
+        } else {
+            throw new NotFoundException("Usuário com id: " + id + " não encontrado");
+        }
+    }
+
     public void deleteByEmail(String email) {
         verificarSeEmailExiste(email);
         repository.deleteByEmail(email);

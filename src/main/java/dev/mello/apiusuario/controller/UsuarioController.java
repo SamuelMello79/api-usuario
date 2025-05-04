@@ -2,7 +2,7 @@ package dev.mello.apiusuario.controller;
 
 import dev.mello.apiusuario.bussiness.UsuarioService;
 import dev.mello.apiusuario.bussiness.dto.UsuarioDTO;
-import dev.mello.apiusuario.infrastructure.entity.Usuario;
+import dev.mello.apiusuario.bussiness.mapper.UsuarioMapper;
 import dev.mello.apiusuario.infrastructure.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -11,17 +11,35 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/usuario")
 @RequiredArgsConstructor
 public class UsuarioController {
+    private final UsuarioMapper mapper;
     private final UsuarioService service;
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
 
     @PostMapping
-    public ResponseEntity<Usuario> salvar(@RequestBody Usuario usuario) {
-        return ResponseEntity.ok(service.salvarUsuario(usuario));
+    public ResponseEntity<UsuarioDTO> salvar(@RequestBody UsuarioDTO usuarioDTO) {
+        return ResponseEntity.ok(mapper.toDto(service.salvarUsuario(mapper.toEntity(usuarioDTO))));
+    }
+
+    @GetMapping
+    public ResponseEntity<List<UsuarioDTO>> listar() {
+        return ResponseEntity.ok(service.findAll().stream().map(mapper::toDto).toList());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<UsuarioDTO> listarPorId(@PathVariable Long id) {
+        return ResponseEntity.ok(mapper.toDto(service.findById(id)));
+    }
+
+    @GetMapping
+    public ResponseEntity<UsuarioDTO> buscarPorEmail(@RequestParam("email") String email) {
+        return ResponseEntity.ok(mapper.toDto(service.findByEmail(email)));
     }
 
     @PostMapping("/login")
@@ -36,15 +54,15 @@ public class UsuarioController {
         return ResponseEntity.ok(token);
     }
 
-    @GetMapping
-    public ResponseEntity<Usuario> buscarPorEmail(@RequestParam("email") String email) {
-        return ResponseEntity.ok(service.findByEmail(email));
-    }
-
     @DeleteMapping("/{email}")
     public ResponseEntity<Void> deletarPorEmail(@PathVariable String email) {
         service.deleteByEmail(email);
         return ResponseEntity.noContent().build();
     }
 
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletarPorId(@PathVariable Long id) {
+        service.deleteById(id);
+        return ResponseEntity.noContent().build();
+    }
 }
