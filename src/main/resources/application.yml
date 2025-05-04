@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: api-usuario
+  datasource:
+    url: jdbc:postgresql://localhost:5431/db_usuario
+    username: admin
+    password: admin
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
