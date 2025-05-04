@@ -14,11 +14,11 @@ import java.util.List;
 public class UsuarioMapper {
     public Usuario toEntity(UsuarioDTO usuarioDTO) {
         return Usuario.builder()
-                .nome(usuarioDTO.nome())
-                .email(usuarioDTO.email())
-                .senha(usuarioDTO.senha())
-                .enderecos(toEnderecoList(usuarioDTO.enderecos()))
-                .telefones(toTelefoneList(usuarioDTO.telefones()))
+                .nome(usuarioDTO.getNome())
+                .email(usuarioDTO.getEmail())
+                .senha(usuarioDTO.getSenha())
+                .enderecos(toEnderecoList(usuarioDTO.getEnderecos()))
+                .telefones(toTelefoneList(usuarioDTO.getTelefones()))
                 .build();
     }
 
@@ -36,11 +36,11 @@ public class UsuarioMapper {
         return enderecosDTO.stream()
                 .map(enderecoDTO ->
                         Endereco.builder()
-                                .numero(enderecoDTO.numero())
-                                .rua(enderecoDTO.rua())
-                                .cidade(enderecoDTO.cidade())
-                                .estado(enderecoDTO.estado())
-                                .cep(enderecoDTO.cep())
+                                .numero(enderecoDTO.getNumero())
+                                .rua(enderecoDTO.getRua())
+                                .cidade(enderecoDTO.getCidade())
+                                .estado(enderecoDTO.getEstado())
+                                .cep(enderecoDTO.getCep())
                                 .build()).toList();
     }
 
@@ -48,8 +48,8 @@ public class UsuarioMapper {
         return telefonesDTO.stream()
                 .map(telefone ->
                         Telefone.builder()
-                                .numero(telefone.numero())
-                                .ddd(telefone.ddd())
+                                .numero(telefone.getNumero())
+                                .ddd(telefone.getDdd())
                                 .build()).toList();
     }
 
@@ -73,6 +73,17 @@ public class UsuarioMapper {
                                 .numero(telefone.getNumero())
                                 .ddd(telefone.getDdd())
                                 .build()).toList();
+    }
+
+    public Usuario updateUsuario(UsuarioDTO usuarioDTO, Usuario usuario) {
+        return Usuario.builder()
+                .id(usuario.getId())
+                .nome(usuarioDTO.getNome() != null ? usuarioDTO.getNome() : usuario.getNome())
+                .email(usuarioDTO.getEmail() != null ? usuarioDTO.getEmail() : usuario.getEmail())
+                .senha(usuarioDTO.getSenha() != null ? usuarioDTO.getSenha() : usuario.getSenha())
+                .enderecos(usuario.getEnderecos())
+                .telefones(usuario.getTelefones())
+                .build();
     }
 
 }
