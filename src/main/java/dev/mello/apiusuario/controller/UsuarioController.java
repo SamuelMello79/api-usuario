@@ -1,6 +1,8 @@
 package dev.mello.apiusuario.controller;
 
 import dev.mello.apiusuario.bussiness.UsuarioService;
+import dev.mello.apiusuario.bussiness.dto.EnderecoDTO;
+import dev.mello.apiusuario.bussiness.dto.TelefoneDTO;
 import dev.mello.apiusuario.bussiness.dto.UsuarioDTO;
 import dev.mello.apiusuario.bussiness.mapper.UsuarioMapper;
 import dev.mello.apiusuario.infrastructure.security.JwtUtil;
@@ -59,6 +61,20 @@ public class UsuarioController {
     public ResponseEntity<UsuarioDTO> atualizaDadoUsuario(@RequestBody UsuarioDTO usuarioDTO,
                                                           @RequestHeader("Authorization") String token) {
         return ResponseEntity.ok(service.atualizaDados(token, usuarioDTO));
+    }
+
+    // Atualiza um endereço do usuário pelo EndereçoID
+    @PutMapping("/endereco")
+    public ResponseEntity<EnderecoDTO> atualizaEndereco(@RequestBody EnderecoDTO enderecoDTO,
+                                                        @RequestParam("id") Long id) {
+        return ResponseEntity.ok(service.atualizaEndereco(id, enderecoDTO));
+    }
+
+    // Atualiza um telefone do usuário pelo TelefoneID
+    @PutMapping("/telefone")
+    public ResponseEntity<TelefoneDTO> atualizaTelefone(@RequestBody TelefoneDTO telefoneDTO,
+                                                        @RequestParam("id") Long id) {
+        return ResponseEntity.ok(service.atualizaTelefone(id, telefoneDTO));
     }
 
     @DeleteMapping("/{email}")
