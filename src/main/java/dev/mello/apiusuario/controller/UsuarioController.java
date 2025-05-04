@@ -37,6 +37,11 @@ public class UsuarioController {
         return ResponseEntity.ok(mapper.toDto(service.findById(id)));
     }
 
+    @GetMapping
+    public ResponseEntity<UsuarioDTO> buscarPorEmail(@RequestParam("email") String email) {
+        return ResponseEntity.ok(mapper.toDto(service.findByEmail(email)));
+    }
+
     @PostMapping("/login")
     public ResponseEntity<String> login(@RequestBody UsuarioDTO usuarioDTO) {
         Authentication authentication = authenticationManager.authenticate(
@@ -49,15 +54,15 @@ public class UsuarioController {
         return ResponseEntity.ok(token);
     }
 
-    @GetMapping
-    public ResponseEntity<UsuarioDTO> buscarPorEmail(@RequestParam("email") String email) {
-        return ResponseEntity.ok(mapper.toDto(service.findByEmail(email)));
-    }
-
     @DeleteMapping("/{email}")
     public ResponseEntity<Void> deletarPorEmail(@PathVariable String email) {
         service.deleteByEmail(email);
         return ResponseEntity.noContent().build();
     }
 
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletarPorId(@PathVariable Long id) {
+        service.deleteById(id);
+        return ResponseEntity.noContent().build();
+    }
 }
