@@ -106,4 +106,24 @@ public class UsuarioService {
         Telefone telefone = mapper.updateTelefone(telefoneDTO, entity);
         return mapper.toTelefoneDTO(telefoneRepository.save(telefone));
     }
+
+    public EnderecoDTO adicionaEndereco(String token, EnderecoDTO enderecoDTO) {
+        String email = jwtUtil.extractUsername(token.substring(7));
+
+        Usuario usuario = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new NotFoundException("Email não localizado"));
+
+        Endereco endereco = mapper.toEndereco(enderecoDTO, usuario.getId());
+        return mapper.toEnderecoDTO(enderecoRepository.save(endereco));
+    }
+
+    public TelefoneDTO adicionaTelefone(String token, TelefoneDTO telefoneDTO) {
+        String email = jwtUtil.extractUsername(token.substring(7));
+
+        Usuario usuario = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new NotFoundException("Email não localizado"));
+
+        Telefone telefone = mapper.toTelefone(telefoneDTO, usuario.getId());
+        return mapper.toTelefoneDTO(telefoneRepository.save(telefone));
+    }
 }
