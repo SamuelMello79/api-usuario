@@ -120,4 +120,24 @@ public class UsuarioMapper {
                 .ddd(dto.getDdd() != null ? dto.getDdd() : entity.getDdd())
                 .build();
     }
+
+    public Endereco toEndereco(EnderecoDTO enderecoDTO, Long usuarioId) {
+        return Endereco.builder()
+                .rua(enderecoDTO.getRua())
+                .numero(enderecoDTO.getNumero())
+                .complemento(enderecoDTO.getComplemento())
+                .cep(enderecoDTO.getCep())
+                .cidade(enderecoDTO.getCidade())
+                .estado(enderecoDTO.getEstado())
+                .usuarioId(usuarioId)
+                .build();
+    }
+
+    public Telefone toTelefone(TelefoneDTO telefoneDTO, Long usuarioId) {
+        return Telefone.builder()
+                .numero(telefoneDTO.getNumero())
+                .ddd(telefoneDTO.getDdd())
+                .usuarioId(usuarioId)
+                .build();
+    }
 }

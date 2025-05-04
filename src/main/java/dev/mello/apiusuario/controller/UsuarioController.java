@@ -20,7 +20,6 @@ import java.util.List;
 @RequestMapping("/usuario")
 @RequiredArgsConstructor
 public class UsuarioController {
-    private final UsuarioMapper mapper;
     private final UsuarioService service;
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
@@ -55,6 +54,18 @@ public class UsuarioController {
         );
         String token = "Bearer " + jwtUtil.generateToken(authentication.getName());
         return ResponseEntity.ok(token);
+    }
+
+    @PostMapping("/endereco")
+    public ResponseEntity<EnderecoDTO> adicionaEndereco(@RequestBody EnderecoDTO enderecoDTO,
+                                                        @RequestHeader("Authorization") String token) {
+        return ResponseEntity.ok(service.adicionaEndereco(token, enderecoDTO));
+    }
+
+    @PostMapping("/telefone")
+    public ResponseEntity<TelefoneDTO> adicionaTelefone(@RequestBody TelefoneDTO telefoneDTO,
+                                                        @RequestHeader("Authorization") String token) {
+        return ResponseEntity.ok(service.adicionaTelefone(token, telefoneDTO));
     }
 
     @PutMapping
