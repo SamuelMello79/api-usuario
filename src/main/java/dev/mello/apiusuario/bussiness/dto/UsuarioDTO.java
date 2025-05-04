@@ -1,15 +1,17 @@
 package dev.mello.apiusuario.bussiness.dto;
 
-import lombok.Builder;
+import lombok.*;
 
 import java.util.List;
 
 @Builder
-public record UsuarioDTO(
-        String nome,
-        String email,
-        String senha,
-        List<EnderecoDTO> enderecos,
-        List<TelefoneDTO> telefones
-) {
+@Setter @Getter
+@AllArgsConstructor
+@NoArgsConstructor
+public class UsuarioDTO {
+    private String nome;
+    private String email;
+    private String senha;
+    private List<EnderecoDTO> enderecos;
+    private List<TelefoneDTO> telefones;
 }

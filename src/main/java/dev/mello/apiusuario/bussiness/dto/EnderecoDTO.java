@@ -1,14 +1,17 @@
 package dev.mello.apiusuario.bussiness.dto;
 
-import lombok.Builder;
+import lombok.*;
 
 @Builder
-public record EnderecoDTO(
-        String rua,
-        Long numero,
-        String complemento,
-        String cidade,
-        String estado,
-        String cep
-) {
+@Getter @Setter
+@AllArgsConstructor
+@NoArgsConstructor
+public class EnderecoDTO {
+    private Long id;
+    private String rua;
+    private Long numero;
+    private String complemento;
+    private String cidade;
+    private String estado;
+    private String cep;
 }
