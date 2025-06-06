@@ -1,5 +1,6 @@
 package dev.mello.apiusuario.controller;
 
+import dev.mello.apiusuario.infrastructure.exception.BadRequestException;
 import dev.mello.apiusuario.infrastructure.exception.ConflictException;
 import dev.mello.apiusuario.infrastructure.exception.NotFoundException;
 import dev.mello.apiusuario.infrastructure.exception.UnathorizedException;
@@ -24,5 +25,10 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(UnathorizedException.class)
     public ResponseEntity<String> handlerUnathorizedException(UnathorizedException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ex.getMessage());
+    }
+
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<String> handleBadRequestException(BadRequestException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
     }
 }
