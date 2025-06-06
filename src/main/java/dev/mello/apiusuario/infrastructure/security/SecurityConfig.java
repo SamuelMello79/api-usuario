@@ -33,6 +33,7 @@ public class SecurityConfig {
                 // Desativa proteção CRSF para APIs REST
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers(HttpMethod.GET, "/usuario/endereco/**").permitAll()
                         // Permite acesso ao endpoint de login sem autentic.
                         .requestMatchers("/usuario/login").permitAll()
                         // Permite acesso ao endpoint POST /usuario sem autentic.
