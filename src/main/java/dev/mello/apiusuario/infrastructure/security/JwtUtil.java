@@ -2,40 +2,44 @@ package dev.mello.apiusuario.infrastructure.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Date;
 
 @Service
 public class JwtUtil {
     // Chave secreta usada para assinar e verificar tokens JWT
-    private final String secretKey = "minhas-secrets-keyss-estaos-aqui";
+    private final String secretKey = "bWluaGFzLXNlY3JldHMta2V5c3MtZXN0YW9zLWFxdWk="; // em base64
+
+    private SecretKey getSecretKey() {
+        byte[] key = Base64.getDecoder().decode(secretKey);
+        return Keys.hmacShaKeyFor(key);
+    }
 
     // Gera um token JWT com o nome de usuário e validade de 1 hora
-    public String generateToken(String username) {
+    public String generateToken(String email) {
         return Jwts.builder()
-                .setSubject(username) // Define o nome de usuário como assunto
-                .setIssuedAt(new Date()) // Define a data e hora de emissão
-                .setExpiration(
+                .subject(email) // Define o nome de usuário como assunto
+                .issuedAt(new Date()) // Define a data e hora de emissão
+                .expiration(
                         new Date(
                                 System.currentTimeMillis() + 1000 * 60 * 60))
                 // Define a data e hora de expiração
-                .signWith(Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8))) // Assina o token com a chave
+                .signWith(getSecretKey()) // Assina o token com a chave
                 .compact(); // constrói o token JWT
     }
 
     // Extrai as claims do token JWT (informação adicionais)
     public Claims extractClaims(String token) {
         return Jwts.parser()
-                .setSigningKey(Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8)))
+                .verifyWith(getSecretKey()) // muda de signWIth para VerifyWith
                 // Define a chave para validar a assinatura
                 .build()
-                .parseClaimsJws(token) // Analisa o token e obtém as claims
-                .getBody(); // Retorna o corpo das claims
+                .parseSignedClaims(token) // Analisa o token e obtém as claims
+                .getPayload(); // Retorna o corpo das claims
     }
 
     // Extrai o nome de usuário do token JWT
