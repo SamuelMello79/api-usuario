@@ -9,11 +9,17 @@ import dev.mello.apiusuario.infrastructure.entity.Telefone;
 import dev.mello.apiusuario.infrastructure.entity.Usuario;
 import dev.mello.apiusuario.infrastructure.exception.ConflictException;
 import dev.mello.apiusuario.infrastructure.exception.NotFoundException;
+import dev.mello.apiusuario.infrastructure.exception.UnathorizedException;
 import dev.mello.apiusuario.infrastructure.repository.EnderecoRepository;
 import dev.mello.apiusuario.infrastructure.repository.TelefoneRepository;
 import dev.mello.apiusuario.infrastructure.repository.UsuarioRepository;
 import dev.mello.apiusuario.infrastructure.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.*;
+import org.springframework.security.authorization.AuthorizationDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -22,6 +28,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class UsuarioService {
+    private final AuthenticationManager authenticationManager;
     private final UsuarioRepository usuarioRepository;
     private final EnderecoRepository enderecoRepository;
     private final TelefoneRepository telefoneRepository;
@@ -34,6 +41,24 @@ public class UsuarioService {
         Usuario usuario = mapper.toEntity(usuarioDTO);
         usuario.setSenha(passwordEncoder.encode(usuario.getSenha()));
         return mapper.toDto(usuarioRepository.save(usuario));
+    }
+
+    public String autenticarUsuario(UsuarioDTO usuarioDTO) {
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            usuarioDTO.getEmail(),
+                            usuarioDTO.getSenha()
+                    )
+            );
+            return "Bearer " + jwtUtil.generateToken(authentication.getName());
+        } catch (BadCredentialsException ex) {
+            throw new UnathorizedException("Usuário com email ou senha inválidos");
+        } catch (UsernameNotFoundException ex) {
+            throw new UnathorizedException("Usuário com email não encontrado");
+        } catch (AuthorizationDeniedException ex) {
+            throw new UnathorizedException("Usuário não possuí as permissões necessárias");
+        }
     }
 
     public List<UsuarioDTO> findAll() {
