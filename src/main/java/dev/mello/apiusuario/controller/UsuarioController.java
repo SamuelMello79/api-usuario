@@ -23,8 +23,6 @@ import java.util.List;
 public class UsuarioController {
     private final UsuarioService usuarioService;
     private final ViaCepService viaCepService;
-    private final AuthenticationManager authenticationManager;
-    private final JwtUtil jwtUtil;
 
     @PostMapping
     public ResponseEntity<UsuarioDTO> salvar(@RequestBody UsuarioDTO usuarioDTO) {
@@ -48,14 +46,7 @@ public class UsuarioController {
 
     @PostMapping("/login")
     public ResponseEntity<String> login(@RequestBody UsuarioDTO usuarioDTO) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        usuarioDTO.getEmail(),
-                        usuarioDTO.getSenha()
-                )
-        );
-        String token = "Bearer " + jwtUtil.generateToken(authentication.getName());
-        return ResponseEntity.ok(token);
+        return ResponseEntity.ok(usuarioService.autenticarUsuario(usuarioDTO));
     }
 
     @PostMapping("/endereco")
