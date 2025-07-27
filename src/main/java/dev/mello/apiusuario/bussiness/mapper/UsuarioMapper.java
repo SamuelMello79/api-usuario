@@ -110,6 +110,7 @@ public class UsuarioMapper {
                 .complemento(dto.getComplemento() != null ? dto.getComplemento() : entity.getComplemento())
                 .cidade(dto.getCidade() != null ? dto.getCidade() : entity.getCidade())
                 .estado(dto.getEstado() != null ? dto.getEstado() : entity.getEstado())
+                .usuarioId(entity.getUsuarioId())
                 .build();
     }
 
@@ -118,6 +119,7 @@ public class UsuarioMapper {
                 .id(entity.getId())
                 .numero(dto.getNumero() != null ? dto.getNumero() : entity.getNumero())
                 .ddd(dto.getDdd() != null ? dto.getDdd() : entity.getDdd())
+                .usuarioId(entity.getUsuarioId())
                 .build();
     }
 
