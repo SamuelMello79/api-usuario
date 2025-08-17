@@ -1,17 +1,17 @@
 version: '3.8'
 
 services:
-  app:
-    container_name: api-usuario
-    build: .
-    ports:
-      - "8080:8080"
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/db_usuario
-      SPRING_DATASOURCE_USERNAME: admin
-      SPRING_DATASOURCE_PASSWORD: admin
-    depends_on:
-      - db
+#  app:
+#    container_name: api-usuario
+#    build: .
+#    ports:
+#      - "8080:8080"
+#    environment:
+#      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/db_usuario
+#      SPRING_DATASOURCE_USERNAME: admin
+#      SPRING_DATASOURCE_PASSWORD: admin
+#    depends_on:
+#      - db
 
   db:
     image: postgres:latest
