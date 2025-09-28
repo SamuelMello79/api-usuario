@@ -10,6 +10,7 @@ import dev.mello.apiusuario.bussiness.mapper.UsuarioConverter;
 import dev.mello.apiusuario.infrastructure.entity.Endereco;
 import dev.mello.apiusuario.infrastructure.entity.Telefone;
 import dev.mello.apiusuario.infrastructure.entity.Usuario;
+import dev.mello.apiusuario.infrastructure.exception.BadRequestException;
 import dev.mello.apiusuario.infrastructure.exception.ConflictException;
 import dev.mello.apiusuario.infrastructure.exception.NotFoundException;
 import dev.mello.apiusuario.infrastructure.exception.UnathorizedException;
@@ -18,7 +19,9 @@ import dev.mello.apiusuario.infrastructure.repository.TelefoneRepository;
 import dev.mello.apiusuario.infrastructure.repository.UsuarioRepository;
 import dev.mello.apiusuario.infrastructure.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.authentication.*;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -26,6 +29,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+
+import static io.jsonwebtoken.lang.Assert.notNull;
 
 @Service
 @RequiredArgsConstructor
@@ -38,11 +43,21 @@ public class UsuarioService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
 
+    public Usuario salvaUsuario(Usuario usuario) {
+        return usuarioRepository.saveAndFlush(usuario);
+    }
+
     public UsuarioResponseDTO salvarUsuario(UsuarioRequestDTO usuarioRequestDTO) {
-        verificaEmailExiste(usuarioRequestDTO.email());
-        Usuario usuario = mapper.toEntity(usuarioRequestDTO);
-        usuario.setSenha(passwordEncoder.encode(usuario.getSenha()));
-        return mapper.toDto(usuarioRepository.save(usuario));
+        try {
+            notNull(usuarioRequestDTO, "Os dados do usuário são obrigatórios");
+            verificaEmailExiste(usuarioRequestDTO.email());
+            Usuario usuario = mapper.toEntity(usuarioRequestDTO);
+            usuario.setSenha(passwordEncoder.encode(usuario.getSenha()));
+            return mapper.toDto(salvaUsuario(usuario));
+        } catch (Exception e) {
+            throw new BadRequestException("Falha ao salvar dados de usuário", e);
+        }
+
     }
 
     public String autenticarUsuario(UsuarioRequestDTO usuarioRequestDTO) {
@@ -103,19 +118,26 @@ public class UsuarioService {
     }
 
     public UsuarioResponseDTO atualizaDados(String token, UsuarioRequestDTO usuarioRequestDTO) {
-        // Aqui buscamos o email do usuário através do token (tirar a obrigatoriedade do email)
-        String email = jwtUtil.extractUsername(token.substring(7));
+        try {
+            notNull(usuarioRequestDTO, "Os dados do usuário são obrigatórios");
 
-        // Cripografia de senha
-         String senha = usuarioRequestDTO.senha() != null ? passwordEncoder.encode(usuarioRequestDTO.senha()) : null;
+            // Aqui buscamos o email do usuário através do token (tirar a obrigatoriedade do email)
+            String email = jwtUtil.extractUsername(token.substring(7));
 
-        // Busca os dados do usuário no db
-        Usuario usuarioEntity = usuarioRepository.findByEmail(email)
-                .orElseThrow(()-> new NotFoundException("Email não localizado"));
+            // Cripografia de senha
+            String senha = usuarioRequestDTO.senha() != null ? passwordEncoder.encode(usuarioRequestDTO.senha()) : null;
 
-        // Mesclou os dados do DTO com os dados do db
-        Usuario usuario = mapper.updateUsuario(usuarioRequestDTO, usuarioEntity, senha);
-        return mapper.toDto(usuarioRepository.save(usuario));
+            // Busca os dados do usuário no db
+            Usuario usuarioEntity = usuarioRepository.findByEmail(email)
+                    .orElseThrow(()-> new NotFoundException("Email não localizado"));
+
+            // Mesclou os dados do DTO com os dados do db
+            Usuario usuario = mapper.updateUsuario(usuarioRequestDTO, usuarioEntity, senha);
+            return mapper.toDto(salvaUsuario(usuario));
+        } catch (Exception e) {
+            throw new BadRequestException("Falha ao gravar dados de usuário", e);
+        }
+
     }
 
     public EnderecoResponseDTO atualizaEndereco(Long idEndereco, EnderecoRequestDTO enderecoRequestDTO) {
