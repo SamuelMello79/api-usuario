@@ -80,7 +80,7 @@ public class UsuarioController {
         return ResponseEntity.ok(usuarioService.atualizaTelefone(id, telefoneRequestDTO));
     }
 
-    @DeleteMapping("/{email}")
+    @DeleteMapping("/email/{email}")
     public ResponseEntity<Void> deletarPorEmail(@PathVariable String email) {
         usuarioService.deleteByEmail(email);
         return ResponseEntity.noContent().build();
