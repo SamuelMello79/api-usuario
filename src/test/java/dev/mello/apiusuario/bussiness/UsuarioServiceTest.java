@@ -17,6 +17,7 @@ import dev.mello.apiusuario.infrastructure.entity.Endereco;
 import dev.mello.apiusuario.infrastructure.entity.Telefone;
 import dev.mello.apiusuario.infrastructure.entity.Usuario;
 import dev.mello.apiusuario.infrastructure.exception.BadRequestException;
+import dev.mello.apiusuario.infrastructure.exception.NotFoundException;
 import dev.mello.apiusuario.infrastructure.repository.UsuarioRepository;
 import dev.mello.apiusuario.infrastructure.security.JwtUtil;
 import org.junit.jupiter.api.BeforeEach;
@@ -264,5 +265,49 @@ public class UsuarioServiceTest {
         verify(usuarioConverter).updateUsuario(usuarioRequestDTO, usuarioEntity, senhaCriptografada);
         verify(usuarioRepository).saveAndFlush(usuarioEntity);
         verifyNoMoreInteractions(usuarioConverter, usuarioRepository, passwordEncoder, jwtUtil);
+    }
+
+    @Test
+    void deveBuscarDadosDeUsuarioPorEmailComSucesso() {
+        // GIVEN
+        when(usuarioRepository.findByEmail(email)).thenReturn(Optional.of(usuarioEntity));
+        when(usuarioConverter.toDto(usuarioEntity)).thenReturn(usuarioResponseDTO);
+
+        // WHEN
+        UsuarioResponseDTO dto = usuarioService.findByEmail(email);
+
+        // THEN
+        assertEquals(dto, usuarioResponseDTO);
+
+        verify(usuarioRepository).findByEmail(email);
+        verify(usuarioConverter).toDto(usuarioEntity);
+        verifyNoMoreInteractions(usuarioRepository, usuarioConverter);
+    }
+
+    @Test
+    void deveGerarExecaoCasoUsuarioNaoEncontradoPorEmail() {
+        // GIVEN
+        when(usuarioRepository.findByEmail(email)).thenThrow(new NotFoundException("Usuário com email: " + email + " não encontrado"));
+
+        // WHEN
+        NotFoundException e = assertThrows(NotFoundException.class, () -> usuarioService.findByEmail(email));
+
+        // THEN
+        assertThat(e.getMessage(), is("Usuário com email: " + email + " não encontrado"));
+
+        verify(usuarioRepository).findByEmail(email);
+        verifyNoInteractions(usuarioConverter);
+    }
+
+    @Test
+    void deveRemoverUsuarioPorEmailComSucesso() {
+        // GIVEN
+        doNothing().when(usuarioRepository).deleteByEmail(email);
+
+        // WHEN
+        usuarioService.deleteByEmail(email);
+
+        // THEN
+        verify(usuarioRepository).deleteByEmail(email);
     }
 }
