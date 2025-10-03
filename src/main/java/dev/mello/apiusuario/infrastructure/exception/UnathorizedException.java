@@ -6,4 +6,8 @@ public class UnathorizedException extends AuthenticationException {
     public UnathorizedException(String message) {
         super(message);
     }
+
+    public UnathorizedException(String msg, Throwable cause) {
+        super(msg, cause);
+    }
 }

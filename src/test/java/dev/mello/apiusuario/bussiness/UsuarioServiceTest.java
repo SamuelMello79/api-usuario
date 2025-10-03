@@ -18,6 +18,7 @@ import dev.mello.apiusuario.infrastructure.entity.Telefone;
 import dev.mello.apiusuario.infrastructure.entity.Usuario;
 import dev.mello.apiusuario.infrastructure.exception.BadRequestException;
 import dev.mello.apiusuario.infrastructure.exception.NotFoundException;
+import dev.mello.apiusuario.infrastructure.exception.UnathorizedException;
 import dev.mello.apiusuario.infrastructure.repository.UsuarioRepository;
 import dev.mello.apiusuario.infrastructure.security.JwtUtil;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,6 +27,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.authorization.AuthorizationDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
@@ -56,6 +63,9 @@ public class UsuarioServiceTest {
     PasswordEncoder passwordEncoder;
 
     @Mock
+    AuthenticationManager authenticationManager;
+
+    @Mock
     JwtUtil jwtUtil;
 
     Usuario usuarioEntity;
@@ -70,7 +80,10 @@ public class UsuarioServiceTest {
     EnderecoResponseDTO enderecoResponseDTO;
     TelefoneResponseDTO telefoneResponseDTO;
 
-    String tokenValido;
+    UsernamePasswordAuthenticationToken authToken;
+
+    String tokenFinal;
+    String tokenExperado;
     String email;
     String senhaCriptografada;
 
@@ -114,10 +127,85 @@ public class UsuarioServiceTest {
         usuarioResponseDTO = UsuarioResponseDTOFixture.build(1L, "Usuario", "teste@email.com", "teste", List.of(enderecoResponseDTO), List.of(telefoneResponseDTO));
 
         email = "teste@email.com";
-        tokenValido = "Bearer tokenValido";
+        tokenFinal = "Bearer tokenFinal";
+        tokenExperado = "tokenFinal";
         senhaCriptografada = "senha-criptografada";
+
+        authToken = new UsernamePasswordAuthenticationToken(usuarioRequestDTO.email(), usuarioRequestDTO.senha());
     }
 
+    // Deve Autenticar Usuário
+    @Test
+    void deveAutenticarUsuarioComSucesso() {
+        // GIVEN
+        Authentication authentication = mock(Authentication.class);
+
+        when(authenticationManager.authenticate(authToken)).thenReturn(authentication);
+        when(authentication.getName()).thenReturn(email);
+        when(jwtUtil.generateToken(email)).thenReturn(tokenExperado);
+
+        // WHEN
+        String resultado = usuarioService.autenticarUsuario(usuarioRequestDTO);
+
+        // THEN
+        assertEquals(tokenFinal, resultado);
+        verify(authenticationManager).authenticate(authToken);
+        verify(jwtUtil).generateToken(email);
+        verify(authentication).getName();
+    }
+
+    @Test
+    void deveGerarExececaoCasoCredenciaisInvalidas() {
+        // GIVEN
+        when(authenticationManager.authenticate(authToken)).thenThrow(new BadCredentialsException("Credênciais inválidas"));
+
+        // WHEN
+        UnathorizedException e = assertThrows(UnathorizedException.class, () -> usuarioService.autenticarUsuario(usuarioRequestDTO));
+
+        // THEN
+        assertThat(e.getMessage(), is("Usuário com email ou senha inválidos"));
+        assertThat(e.getCause().getClass(), is(BadCredentialsException.class));
+        assertThat(e.getCause().getMessage(), is("Credênciais inválidas"));
+
+        verify(authenticationManager).authenticate(authToken);
+        verifyNoMoreInteractions(authenticationManager);
+    }
+
+    @Test
+    void deveGerarExececaoCasoUsuarioNaoEncontrado() {
+        // GIVEN
+        when(authenticationManager.authenticate(authToken)).thenThrow(new UsernameNotFoundException("Usuário não encontrado"));
+
+        // WHEN
+        UnathorizedException e = assertThrows(UnathorizedException.class, () -> usuarioService.autenticarUsuario(usuarioRequestDTO));
+
+        // THEN
+        assertThat(e.getMessage(), is("Usuário com email não encontrado"));
+        assertThat(e.getCause().getClass(), is(UsernameNotFoundException.class));
+        assertThat(e.getCause().getMessage(), is("Usuário não encontrado"));
+
+        verify(authenticationManager).authenticate(authToken);
+        verifyNoMoreInteractions(authenticationManager);
+    }
+
+    @Test
+    void deveGerarExececaoCasoUsuarioNaoTenhaPermissoes() {
+        // GIVEN
+        when(authenticationManager.authenticate(authToken)).thenThrow(new AuthorizationDeniedException("Usuário sem permissões"));
+
+        // WHEN
+        UnathorizedException e = assertThrows(UnathorizedException.class, () -> usuarioService.autenticarUsuario(usuarioRequestDTO));
+
+        // THEN
+        assertThat(e.getMessage(), is("Usuário não possuí as permissões necessárias"));
+        assertThat(e.getCause().getClass(), is(AuthorizationDeniedException.class));
+        assertThat(e.getCause().getMessage(), is("Usuário sem permissões"));
+
+        verify(authenticationManager).authenticate(authToken);
+        verifyNoMoreInteractions(authenticationManager);
+    }
+
+    // Salvar Usuario
     @Test
     void deveSalvarUsuarioComSucesso() {
         // GIVEN
@@ -138,6 +226,7 @@ public class UsuarioServiceTest {
         verifyNoMoreInteractions(usuarioRepository); // verifica se não há mais interações
     }
 
+    // Gravar Usuario
     @Test
     void deveGravarUsuarioComSucesso() {
         // GIVEN
@@ -162,7 +251,7 @@ public class UsuarioServiceTest {
     }
 
     @Test
-    void naoDeveSalvarUsuarioCasoUsuarioRequestDTONull() {
+    void naoDeveGravarUsuarioCasoUsuarioRequestDTONull() {
         // WHEN
         BadRequestException e = assertThrows(BadRequestException.class, () -> usuarioService.salvarUsuario(null));
 
@@ -201,10 +290,11 @@ public class UsuarioServiceTest {
         verifyNoMoreInteractions(usuarioConverter, usuarioRepository, passwordEncoder);
     }
 
+    // Atualizar Usuario
     @Test
     void deveAtualizarUsuarioComSucesso() {
         // GIVEN
-        when(jwtUtil.extractUsername("tokenValido")).thenReturn(email);
+        when(jwtUtil.extractUsername("tokenFinal")).thenReturn(email);
         when(usuarioRepository.findByEmail("teste@email.com")).thenReturn(Optional.of(usuarioEntity));
         when(passwordEncoder.encode("teste")).thenReturn(senhaCriptografada);
         when(usuarioConverter.updateUsuario(usuarioRequestDTO, usuarioEntity, senhaCriptografada)).thenReturn(usuarioEntity);
@@ -212,12 +302,12 @@ public class UsuarioServiceTest {
         when(usuarioConverter.toDto(usuarioEntity)).thenReturn(usuarioResponseDTO);
 
         // WHEN
-        UsuarioResponseDTO dto = usuarioService.atualizaDados(tokenValido, usuarioRequestDTO);
+        UsuarioResponseDTO dto = usuarioService.atualizaDados(tokenFinal, usuarioRequestDTO);
 
         // THEN
         assertEquals(dto, usuarioResponseDTO);
 
-        verify(jwtUtil).extractUsername("tokenValido");
+        verify(jwtUtil).extractUsername("tokenFinal");
         verify(usuarioRepository).findByEmail(email);
         verify(passwordEncoder).encode("teste");
         verify(usuarioConverter).updateUsuario(usuarioRequestDTO, usuarioEntity, senhaCriptografada);
@@ -229,7 +319,7 @@ public class UsuarioServiceTest {
     @Test
     void naoDeveAtualizarUsuarioCasoUsuarioRequestDTONull() {
         // WHEN
-        BadRequestException e = assertThrows(BadRequestException.class, () -> usuarioService.atualizaDados(tokenValido, null));
+        BadRequestException e = assertThrows(BadRequestException.class, () -> usuarioService.atualizaDados(tokenFinal, null));
 
         // THEN
         assertThat(e, notNullValue());
@@ -243,14 +333,14 @@ public class UsuarioServiceTest {
     @Test
     void deveGerarExcecaoCasoOcorraErroAoAtualizarUsuario() {
         // GIVEN
-        when(jwtUtil.extractUsername("tokenValido")).thenReturn(email);
+        when(jwtUtil.extractUsername("tokenFinal")).thenReturn(email);
         when(usuarioRepository.findByEmail(email)).thenReturn(Optional.of(usuarioEntity));
         when(passwordEncoder.encode("teste")).thenReturn(senhaCriptografada);
         when(usuarioConverter.updateUsuario(usuarioRequestDTO, usuarioEntity, senhaCriptografada)).thenReturn(usuarioEntity);
         when(usuarioRepository.saveAndFlush(usuarioEntity)).thenThrow(new RuntimeException("Erro ao gravar os dados de usuário"));
 
         // WHEN
-        BadRequestException e = assertThrows(BadRequestException.class, () -> usuarioService.atualizaDados(tokenValido, usuarioRequestDTO));
+        BadRequestException e = assertThrows(BadRequestException.class, () -> usuarioService.atualizaDados(tokenFinal, usuarioRequestDTO));
 
         // THEN
         assertThat(e, notNullValue());
@@ -259,7 +349,7 @@ public class UsuarioServiceTest {
         assertThat(e.getCause().getClass(), is(RuntimeException.class));
         assertThat(e.getCause().getMessage(), is("Erro ao gravar os dados de usuário"));
 
-        verify(jwtUtil).extractUsername("tokenValido");
+        verify(jwtUtil).extractUsername("tokenFinal");
         verify(usuarioRepository).findByEmail(email);
         verify(passwordEncoder).encode("teste");
         verify(usuarioConverter).updateUsuario(usuarioRequestDTO, usuarioEntity, senhaCriptografada);
@@ -267,6 +357,7 @@ public class UsuarioServiceTest {
         verifyNoMoreInteractions(usuarioConverter, usuarioRepository, passwordEncoder, jwtUtil);
     }
 
+    // Buscar Usuario
     @Test
     void deveBuscarDadosDeUsuarioPorEmailComSucesso() {
         // GIVEN
@@ -299,6 +390,7 @@ public class UsuarioServiceTest {
         verifyNoInteractions(usuarioConverter);
     }
 
+    // Remover Usuario
     @Test
     void deveRemoverUsuarioPorEmailComSucesso() {
         // GIVEN
@@ -310,4 +402,7 @@ public class UsuarioServiceTest {
         // THEN
         verify(usuarioRepository).deleteByEmail(email);
     }
+
+    // TODO: implementar os seguimentos metodos: findAll(), findById(), deleteById(),
+    //  atualizaEndereco(), atualizaTefone(), adicionaEndereco(), adicionaTelefone()
 }
