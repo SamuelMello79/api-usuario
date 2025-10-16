@@ -96,7 +96,7 @@ public class UsuarioService {
 
     public void deleteById(Long id) {
         if (usuarioRepository.existsById(id)) {
-            deleteById(id);
+            usuarioRepository.deleteById(id);
         } else {
             throw new NotFoundException("Usuário com id: " + id + " não encontrado");
         }

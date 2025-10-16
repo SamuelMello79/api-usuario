@@ -18,7 +18,7 @@ public class ViaCepService {
     }
 
     private String processarCep(String cep) {
-        String cepFormatado = cep.replace(" ","").replace("-","");
+        String cepFormatado = cep.replace(" ", "").replace("-", "");
 
         if (!cepFormatado.matches("\\d+") || !Objects.equals(cepFormatado.length(), 8)) {
             throw new BadRequestException("O cep contém caracteres inválidos, favor verificar!");

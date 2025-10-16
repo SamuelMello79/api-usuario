@@ -80,6 +80,11 @@ public class UsuarioServiceTest {
     EnderecoResponseDTO enderecoResponseDTO;
     TelefoneResponseDTO telefoneResponseDTO;
 
+    List<Usuario> usuariosEntity;
+    List<UsuarioResponseDTO> usuariosResponseDTO;
+
+    Long idUsuario;
+
     UsernamePasswordAuthenticationToken authToken;
 
     String tokenFinal;
@@ -125,6 +130,11 @@ public class UsuarioServiceTest {
         enderecoResponseDTO = EnderecoResponseDTOFixture.build(1L, "Rua 1", 1200L, "Marmoraria", "Itapetininga", "São Paulo", "879456455");
         telefoneResponseDTO = TelefoneResponseDTOFixture.build(1L, "996877889", "15");
         usuarioResponseDTO = UsuarioResponseDTOFixture.build(1L, "Usuario", "teste@email.com", "teste", List.of(enderecoResponseDTO), List.of(telefoneResponseDTO));
+
+        usuariosEntity = List.of(usuarioEntity);
+        usuariosResponseDTO = List.of(usuarioResponseDTO);
+
+        idUsuario = 1L;
 
         email = "teste@email.com";
         tokenFinal = "Bearer tokenFinal";
@@ -403,6 +413,69 @@ public class UsuarioServiceTest {
         verify(usuarioRepository).deleteByEmail(email);
     }
 
-    // TODO: implementar os seguimentos metodos: findAll(), findById(), deleteById(),
+    // Listar Usuarios
+    @Test
+    void deveListarUsuariosComSucesso() {
+        // GIVEN
+        when(usuarioRepository.findAll()).thenReturn(usuariosEntity);
+        when(usuarioConverter.toDto(usuarioEntity)).thenReturn(usuarioResponseDTO);
+
+        // WHEN
+        List<UsuarioResponseDTO> resposta = usuarioService.findAll();
+
+        // THEN
+        assertEquals(usuariosResponseDTO, resposta);
+
+        verify(usuarioRepository).findAll();
+    }
+
+    @Test
+    void deveListarUsuarioComSucessoPeloId() {
+
+        // GIVEN
+        when(usuarioRepository.findById(idUsuario)).thenReturn(Optional.of(usuarioEntity));
+        when(usuarioConverter.toDto(usuarioEntity)).thenReturn(usuarioResponseDTO);
+
+        // WHEN
+        UsuarioResponseDTO resposta = usuarioService.findById(1L);
+
+        // THEN
+        assertEquals(usuarioResponseDTO, resposta);
+        verify(usuarioRepository).findById(idUsuario);
+    }
+
+    @Test
+    void deveGerarExecaoCasoUsuarioNaoEncontradoPorId() {
+        // GIVEN
+        when(usuarioRepository.findById(idUsuario)).thenThrow(new NotFoundException("Usuário com id: " + idUsuario + " não encontrado!"));
+
+        // WHEN
+        NotFoundException e = assertThrows(NotFoundException.class, () -> usuarioService.findById(idUsuario));
+
+        // THEN
+        assertThat(e.getMessage(), is("Usuário com id: " + idUsuario + " não encontrado!"));
+        verify(usuarioRepository).findById(idUsuario);
+        verifyNoInteractions(usuarioConverter);
+    }
+
+    @Test
+    void deveRemoverUsusarioPorIdComSucesso() {
+        // GIVEN
+        doNothing().when(usuarioRepository).deleteById(idUsuario);
+        when(usuarioRepository.existsById(idUsuario)).thenReturn(true);
+
+        // WHEN
+        usuarioService.deleteById(idUsuario);
+
+        // THEN
+        verify(usuarioRepository).deleteById(idUsuario);
+    }
+
+//    @Test
+//    void deveAtualizarEnderecoDeUsuarioComSucesso() {
+//
+//    }
+
+    // TODO: implementar os seguimentos metodos:
     //  atualizaEndereco(), atualizaTefone(), adicionaEndereco(), adicionaTelefone()
 }
