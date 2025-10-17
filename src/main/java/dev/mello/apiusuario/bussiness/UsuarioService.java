@@ -47,6 +47,14 @@ public class UsuarioService {
         return usuarioRepository.saveAndFlush(usuario);
     }
 
+    public Endereco salvaEndereco(Endereco endereco) {
+        return enderecoRepository.saveAndFlush(endereco);
+    }
+
+    public Telefone salvaTelefone(Telefone telefone) {
+        return telefoneRepository.saveAndFlush(telefone);
+    }
+
     public UsuarioResponseDTO salvarUsuario(UsuarioRequestDTO usuarioRequestDTO) {
         try {
             notNull(usuarioRequestDTO, "Os dados do usuário são obrigatórios");
@@ -135,7 +143,7 @@ public class UsuarioService {
                 .orElseThrow(() -> new NotFoundException("Id do endereço " + idEndereco + " não localizado"));
 
         Endereco endereco = mapper.updateEndereco(enderecoRequestDTO, entity);
-        return mapper.toEnderecoDTO(enderecoRepository.save(endereco));
+        return mapper.toEnderecoDTO(salvaEndereco(endereco));
     }
 
     public TelefoneResponseDTO atualizaTelefone(Long idTelefone, TelefoneRequestDTO telefoneRequestDTO) {
@@ -143,7 +151,7 @@ public class UsuarioService {
                 .orElseThrow(() -> new NotFoundException("Id do telefone " + idTelefone + " não localizado"));
 
         Telefone telefone = mapper.updateTelefone(telefoneRequestDTO, entity);
-        return mapper.toTelefoneDTO(telefoneRepository.save(telefone));
+        return mapper.toTelefoneDTO(salvaTelefone(telefone));
     }
 
     public EnderecoResponseDTO adicionaEndereco(String token, EnderecoRequestDTO enderecoRequestDTO) {
@@ -153,7 +161,7 @@ public class UsuarioService {
                 .orElseThrow(() -> new NotFoundException("Email não localizado"));
 
         Endereco endereco = mapper.toEndereco(enderecoRequestDTO, usuario.getId());
-        return mapper.toEnderecoDTO(enderecoRepository.save(endereco));
+        return mapper.toEnderecoDTO(salvaEndereco(endereco));
     }
 
     public TelefoneResponseDTO adicionaTelefone(String token, TelefoneRequestDTO telefoneRequestDTO) {
@@ -163,7 +171,17 @@ public class UsuarioService {
                 .orElseThrow(() -> new NotFoundException("Email não localizado"));
 
         Telefone telefone = mapper.toTelefone(telefoneRequestDTO, usuario.getId());
-        return mapper.toTelefoneDTO(telefoneRepository.save(telefone));
+        return mapper.toTelefoneDTO(salvaTelefone(telefone));
+    }
+
+    public TelefoneResponseDTO buscaTelefonePorId(Long idTelefone) {
+        return mapper.toTelefoneDTO(telefoneRepository.findById(idTelefone)
+                .orElseThrow(() -> new NotFoundException("Id do telefone " + idTelefone + " não localizado")));
+    }
+
+    public EnderecoResponseDTO buscaEndereceoPorId(Long idEndereco) {
+        return mapper.toEnderecoDTO(enderecoRepository.findById(idEndereco)
+                .orElseThrow(() -> new NotFoundException("Id do endereço " + idEndereco + " não localizado")));
     }
 
     private void verificaEmailExiste(String email) {

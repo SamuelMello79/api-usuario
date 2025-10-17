@@ -19,6 +19,8 @@ import dev.mello.apiusuario.infrastructure.entity.Usuario;
 import dev.mello.apiusuario.infrastructure.exception.BadRequestException;
 import dev.mello.apiusuario.infrastructure.exception.NotFoundException;
 import dev.mello.apiusuario.infrastructure.exception.UnathorizedException;
+import dev.mello.apiusuario.infrastructure.repository.EnderecoRepository;
+import dev.mello.apiusuario.infrastructure.repository.TelefoneRepository;
 import dev.mello.apiusuario.infrastructure.repository.UsuarioRepository;
 import dev.mello.apiusuario.infrastructure.security.JwtUtil;
 import org.junit.jupiter.api.BeforeEach;
@@ -57,6 +59,12 @@ public class UsuarioServiceTest {
     UsuarioRepository usuarioRepository;
 
     @Mock
+    EnderecoRepository enderecoRepository;
+
+    @Mock
+    TelefoneRepository telefoneRepository;
+
+    @Mock
     UsuarioConverter usuarioConverter;
 
     @Mock
@@ -84,6 +92,8 @@ public class UsuarioServiceTest {
     List<UsuarioResponseDTO> usuariosResponseDTO;
 
     Long idUsuario;
+    Long idEndereco;
+    Long idTelefone;
 
     UsernamePasswordAuthenticationToken authToken;
 
@@ -135,6 +145,8 @@ public class UsuarioServiceTest {
         usuariosResponseDTO = List.of(usuarioResponseDTO);
 
         idUsuario = 1L;
+        idEndereco = 1L;
+        idTelefone = 1L;
 
         email = "teste@email.com";
         tokenFinal = "Bearer tokenFinal";
@@ -471,11 +483,111 @@ public class UsuarioServiceTest {
         verify(usuarioRepository).deleteById(idUsuario);
     }
 
-//    @Test
-//    void deveAtualizarEnderecoDeUsuarioComSucesso() {
-//
-//    }
+    @Test
+    void deveAtualizarEnderecoDeUsuarioComSucesso() {
+        // GIVEN
+        when(enderecoRepository.findById(idEndereco)).thenReturn(Optional.of(enderecoEntity));
+        when(usuarioConverter.updateEndereco(enderecoRequestDTO, enderecoEntity)).thenReturn(enderecoEntity);
+        when(enderecoRepository.saveAndFlush(enderecoEntity)).thenReturn(enderecoEntity);
+        when(usuarioConverter.toEnderecoDTO(enderecoEntity)).thenReturn(enderecoResponseDTO);
 
-    // TODO: implementar os seguimentos metodos:
-    //  atualizaEndereco(), atualizaTefone(), adicionaEndereco(), adicionaTelefone()
+        // WHEN
+        EnderecoResponseDTO dto = usuarioService.atualizaEndereco(idEndereco, enderecoRequestDTO);
+
+        // THEN
+        assertEquals(dto, enderecoResponseDTO);
+        verify(enderecoRepository).findById(idEndereco);
+        verify(usuarioConverter).updateEndereco(enderecoRequestDTO, enderecoEntity);
+        verify(enderecoRepository).saveAndFlush(enderecoEntity);
+        verify(usuarioConverter).toEnderecoDTO(enderecoEntity);
+    }
+
+    @Test
+    void deveGerarExecaoCasoEnderecoNaoEncontradoPorIdAoAtualizar() {
+        // GIVEN
+        when(enderecoRepository.findById(idEndereco)).thenThrow(new NotFoundException("Id do endereço " + idEndereco + " não localizado"));
+
+        // WHEN
+        NotFoundException e = assertThrows(NotFoundException.class, () -> usuarioService.buscaEndereceoPorId(idUsuario));
+
+        // THEN
+        assertThat(e.getMessage(), is("Id do endereço " + idEndereco + " não localizado"));
+        verify(enderecoRepository).findById(idEndereco);
+        verifyNoInteractions(usuarioConverter);
+    }
+
+    @Test
+    void deveAtualizarTelefoneDeUsuarioComSucesso() {
+        // GIVEN
+        when(telefoneRepository.findById(idTelefone)).thenReturn(Optional.of(telefoneEntity));
+        when(usuarioConverter.updateTelefone(telefoneRequestDTO, telefoneEntity)).thenReturn(telefoneEntity);
+        when(telefoneRepository.saveAndFlush(telefoneEntity)).thenReturn(telefoneEntity);
+        when(usuarioConverter.toTelefoneDTO(telefoneEntity)).thenReturn(telefoneResponseDTO);
+
+        // WHEN
+        TelefoneResponseDTO dto = usuarioService.atualizaTelefone(idTelefone, telefoneRequestDTO);
+
+        // THEN
+        assertEquals(dto, telefoneResponseDTO);
+        verify(telefoneRepository).findById(idTelefone);
+        verify(usuarioConverter).updateTelefone(telefoneRequestDTO, telefoneEntity);
+        verify(telefoneRepository).saveAndFlush(telefoneEntity);
+        verify(usuarioConverter).toTelefoneDTO(telefoneEntity);
+    }
+
+    @Test
+    void deveGerarExecaoCasoTelefoneNaoEncontradoPorIdAoAtualizar() {
+        // GIVEN
+        when(telefoneRepository.findById(idTelefone)).thenThrow(new NotFoundException("Id do telefone " + idTelefone + " não localizado"));
+
+        // WHEN
+        NotFoundException e = assertThrows(NotFoundException.class, () -> usuarioService.buscaTelefonePorId(idTelefone));
+
+        // THEN
+        assertThat(e.getMessage(), is("Id do telefone " + idTelefone + " não localizado"));
+        verify(telefoneRepository).findById(idTelefone);
+        verifyNoInteractions(usuarioConverter);
+    }
+
+    @Test
+    void deveAdicionarUmEnderecoComSucesso() {
+        // GIVEN
+        when(jwtUtil.extractUsername(tokenExperado)).thenReturn(email);
+        when(usuarioRepository.findByEmail(email)).thenReturn(Optional.of(usuarioEntity));
+        when(enderecoRepository.saveAndFlush(enderecoEntity)).thenReturn(enderecoEntity);
+        when(usuarioConverter.toEnderecoDTO(enderecoEntity)).thenReturn(enderecoResponseDTO);
+        when(usuarioConverter.toEndereco(enderecoRequestDTO, idUsuario)).thenReturn(enderecoEntity);
+
+        // WHEN
+        EnderecoResponseDTO dto = usuarioService.adicionaEndereco(tokenFinal, enderecoRequestDTO);
+
+        // THEN
+        assertEquals(dto, enderecoResponseDTO);
+        verify(jwtUtil).extractUsername(tokenExperado);
+        verify(usuarioRepository).findByEmail(email);
+        verify(enderecoRepository).saveAndFlush(enderecoEntity);
+        verify(usuarioConverter).toEnderecoDTO(enderecoEntity);
+        verifyNoMoreInteractions(usuarioRepository, usuarioConverter, jwtUtil);
+    }
+
+    @Test
+    void deveAdicionarUmTelefoneComSucesso() {
+        // GIVEN
+        when(jwtUtil.extractUsername(tokenExperado)).thenReturn(email);
+        when(usuarioRepository.findByEmail(email)).thenReturn(Optional.of(usuarioEntity));
+        when(telefoneRepository.saveAndFlush(telefoneEntity)).thenReturn(telefoneEntity);
+        when(usuarioConverter.toTelefoneDTO(telefoneEntity)).thenReturn(telefoneResponseDTO);
+        when(usuarioConverter.toTelefone(telefoneRequestDTO, idUsuario)).thenReturn(telefoneEntity);
+
+        // WHEN
+        TelefoneResponseDTO dto = usuarioService.adicionaTelefone(tokenFinal, telefoneRequestDTO);
+
+        // THEN
+        assertEquals(dto, telefoneResponseDTO);
+        verify(jwtUtil).extractUsername(tokenExperado);
+        verify(usuarioRepository).findByEmail(email);
+        verify(telefoneRepository).saveAndFlush(telefoneEntity);
+        verify(usuarioConverter).toTelefoneDTO(telefoneEntity);
+        verifyNoMoreInteractions(usuarioRepository, usuarioConverter, jwtUtil);
+    }
 }
