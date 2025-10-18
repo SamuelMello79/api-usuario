@@ -31,6 +31,7 @@ import java.util.List;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ExtendWith(MockitoExtension.class)
@@ -56,6 +57,8 @@ public class UsuarioControllerTest {
     private TelefoneResponseDTO telefoneResponseDTO;
     private UsuarioResponseDTO usuarioResponseDTO;
 
+    private List<UsuarioResponseDTO> usuariosResponseDTO;
+
     private String json;
     private String tokenValido;
     private String email;
@@ -70,12 +73,30 @@ public class UsuarioControllerTest {
         telefoneResponseDTO = TelefoneResponseDTOFixture.build(1L, "996877889", "15");
         usuarioResponseDTO = UsuarioResponseDTOFixture.build(1L, "Usuario", "teste@email.com", "teste", List.of(enderecoResponseDTO), List.of(telefoneResponseDTO));
 
+        usuariosResponseDTO = List.of(usuarioResponseDTO);
+
         email = "teste@email.com";
         tokenValido = "Bearer tokenValido";
 
         mockMvc = MockMvcBuilders.standaloneSetup(usuarioController).alwaysDo(print()).build(); // vai exibir os logs
         url = "/usuario"; // url padrão
         json = objectMapper.writeValueAsString(usuarioRequestDTO); // converter o dto em um json
+    }
+
+    @Test
+    void deveAutenticarUsuarioComSucesso() throws Exception {
+        when(usuarioService.autenticarUsuario(usuarioRequestDTO)).thenReturn(tokenValido);
+
+        mockMvc.perform(post(url + "/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(status().isOk())
+                .andExpect(content().string(tokenValido)
+                );
+
+        verify(usuarioService).autenticarUsuario(usuarioRequestDTO);
+        verifyNoMoreInteractions(usuarioService);
     }
 
     @Test
@@ -130,13 +151,13 @@ public class UsuarioControllerTest {
     }
 
     @Test
-    void deveBuscarDadosDeUsuarioComSucesso() throws Exception {
+    void deveBuscarDadosDeUsuarioComSucessoPorEmail() throws Exception {
         when(usuarioService.findByEmail(email)).thenReturn(usuarioResponseDTO);
 
         mockMvc.perform(get(url)
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
-                        .param("email", email)
+                .param("email", email)
                 .header("Authorization", tokenValido)
         ).andExpect(status().isOk());
 
@@ -156,7 +177,7 @@ public class UsuarioControllerTest {
     }
 
     @Test
-    void deveRemoverUsuarioComSucesso() throws Exception {
+    void deveRemoverUsuarioPorEmailComSucesso() throws Exception {
         doNothing().when(usuarioService).deleteByEmail(email);
 
         mockMvc.perform(delete(url + "/email/" + email)
@@ -168,4 +189,19 @@ public class UsuarioControllerTest {
         verifyNoMoreInteractions(usuarioService);
     }
 
+    @Test
+    void deveListarUsuariosComSucesso() throws Exception {
+        when(usuarioService.findAll()).thenReturn(usuariosResponseDTO);
+
+        mockMvc.perform(get(url + "/listar")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .header("Authorization", tokenValido)
+                )
+                .andExpect(status().isOk())
+                .andExpect(content().string(objectMapper.writeValueAsString(usuariosResponseDTO)));
+
+        verify(usuarioService).findAll();
+        verifyNoMoreInteractions(usuarioService);
+    }
 }
