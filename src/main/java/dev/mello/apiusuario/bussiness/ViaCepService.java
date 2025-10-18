@@ -18,10 +18,18 @@ public class ViaCepService {
     }
 
     private String processarCep(String cep) {
+        if (cep == null || cep.trim().isEmpty()) {
+            throw new BadRequestException("CEP não pode ser vazio ou nulo!");
+        }
+
         String cepFormatado = cep.replace(" ", "").replace("-", "");
 
-        if (!cepFormatado.matches("\\d+") || !Objects.equals(cepFormatado.length(), 8)) {
-            throw new BadRequestException("O cep contém caracteres inválidos, favor verificar!");
+        if (!cepFormatado.matches("\\d+")) {
+            throw new BadRequestException("O CEP deve conter apenas números!");
+        }
+
+        if (cepFormatado.length() != 8) {
+            throw new BadRequestException("O CEP deve ter exatamente 8 digitos!");
         }
 
         return cepFormatado;
