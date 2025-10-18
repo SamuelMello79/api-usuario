@@ -47,6 +47,14 @@ public class UsuarioService {
         return usuarioRepository.saveAndFlush(usuario);
     }
 
+    public Endereco salvaEndereco(Endereco endereco) {
+        return enderecoRepository.saveAndFlush(endereco);
+    }
+
+    public Telefone salvaTelefone(Telefone telefone) {
+        return telefoneRepository.saveAndFlush(telefone);
+    }
+
     public UsuarioResponseDTO salvarUsuario(UsuarioRequestDTO usuarioRequestDTO) {
         try {
             notNull(usuarioRequestDTO, "Os dados do usuário são obrigatórios");
@@ -70,11 +78,11 @@ public class UsuarioService {
             );
             return "Bearer " + jwtUtil.generateToken(authentication.getName());
         } catch (BadCredentialsException ex) {
-            throw new UnathorizedException("Usuário com email ou senha inválidos");
+            throw new UnathorizedException("Usuário com email ou senha inválidos", ex);
         } catch (UsernameNotFoundException ex) {
-            throw new UnathorizedException("Usuário com email não encontrado");
+            throw new UnathorizedException("Usuário com email não encontrado", ex);
         } catch (AuthorizationDeniedException ex) {
-            throw new UnathorizedException("Usuário não possuí as permissões necessárias");
+            throw new UnathorizedException("Usuário não possuí as permissões necessárias", ex);
         }
     }
 
@@ -86,17 +94,17 @@ public class UsuarioService {
 
     public UsuarioResponseDTO findById(Long id) {
         return mapper.toDto(usuarioRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Usuário com id: " +  id + " não encontrado!")));
+                .orElseThrow(() -> new NotFoundException("Usuário com id: " + id + " não encontrado!")));
     }
 
     public UsuarioResponseDTO findByEmail(String email) {
         return mapper.toDto(usuarioRepository.findByEmail(email)
-                .orElseThrow(() -> new NotFoundException("Usuário com email: " +  email + " não encontrado")));
+                .orElseThrow(() -> new NotFoundException("Usuário com email: " + email + " não encontrado")));
     }
 
     public void deleteById(Long id) {
         if (usuarioRepository.existsById(id)) {
-            deleteById(id);
+            usuarioRepository.deleteById(id);
         } else {
             throw new NotFoundException("Usuário com id: " + id + " não encontrado");
         }
@@ -105,16 +113,6 @@ public class UsuarioService {
     public void deleteByEmail(String email) {
         verificarSeEmailExiste(email);
         usuarioRepository.deleteByEmail(email);
-    }
-
-    private void verificaEmailExiste(String email) {
-        if (verificarSeEmailExiste(email)) {
-            throw new ConflictException("Email já cadastrado: " + email);
-        }
-    }
-
-    private boolean verificarSeEmailExiste(String email) {
-        return usuarioRepository.existsByEmail(email);
     }
 
     public UsuarioResponseDTO atualizaDados(String token, UsuarioRequestDTO usuarioRequestDTO) {
@@ -129,7 +127,7 @@ public class UsuarioService {
 
             // Busca os dados do usuário no db
             Usuario usuarioEntity = usuarioRepository.findByEmail(email)
-                    .orElseThrow(()-> new NotFoundException("Email não localizado"));
+                    .orElseThrow(() -> new NotFoundException("Email não localizado"));
 
             // Mesclou os dados do DTO com os dados do db
             Usuario usuario = mapper.updateUsuario(usuarioRequestDTO, usuarioEntity, senha);
@@ -142,10 +140,10 @@ public class UsuarioService {
 
     public EnderecoResponseDTO atualizaEndereco(Long idEndereco, EnderecoRequestDTO enderecoRequestDTO) {
         Endereco entity = enderecoRepository.findById(idEndereco)
-                .orElseThrow(()-> new NotFoundException("Id do endereço " + idEndereco + " não localizado"));
+                .orElseThrow(() -> new NotFoundException("Id do endereço " + idEndereco + " não localizado"));
 
         Endereco endereco = mapper.updateEndereco(enderecoRequestDTO, entity);
-        return mapper.toEnderecoDTO(enderecoRepository.save(endereco));
+        return mapper.toEnderecoDTO(salvaEndereco(endereco));
     }
 
     public TelefoneResponseDTO atualizaTelefone(Long idTelefone, TelefoneRequestDTO telefoneRequestDTO) {
@@ -153,7 +151,7 @@ public class UsuarioService {
                 .orElseThrow(() -> new NotFoundException("Id do telefone " + idTelefone + " não localizado"));
 
         Telefone telefone = mapper.updateTelefone(telefoneRequestDTO, entity);
-        return mapper.toTelefoneDTO(telefoneRepository.save(telefone));
+        return mapper.toTelefoneDTO(salvaTelefone(telefone));
     }
 
     public EnderecoResponseDTO adicionaEndereco(String token, EnderecoRequestDTO enderecoRequestDTO) {
@@ -163,7 +161,7 @@ public class UsuarioService {
                 .orElseThrow(() -> new NotFoundException("Email não localizado"));
 
         Endereco endereco = mapper.toEndereco(enderecoRequestDTO, usuario.getId());
-        return mapper.toEnderecoDTO(enderecoRepository.save(endereco));
+        return mapper.toEnderecoDTO(salvaEndereco(endereco));
     }
 
     public TelefoneResponseDTO adicionaTelefone(String token, TelefoneRequestDTO telefoneRequestDTO) {
@@ -173,6 +171,26 @@ public class UsuarioService {
                 .orElseThrow(() -> new NotFoundException("Email não localizado"));
 
         Telefone telefone = mapper.toTelefone(telefoneRequestDTO, usuario.getId());
-        return mapper.toTelefoneDTO(telefoneRepository.save(telefone));
+        return mapper.toTelefoneDTO(salvaTelefone(telefone));
+    }
+
+    public TelefoneResponseDTO buscaTelefonePorId(Long idTelefone) {
+        return mapper.toTelefoneDTO(telefoneRepository.findById(idTelefone)
+                .orElseThrow(() -> new NotFoundException("Id do telefone " + idTelefone + " não localizado")));
+    }
+
+    public EnderecoResponseDTO buscaEndereceoPorId(Long idEndereco) {
+        return mapper.toEnderecoDTO(enderecoRepository.findById(idEndereco)
+                .orElseThrow(() -> new NotFoundException("Id do endereço " + idEndereco + " não localizado")));
+    }
+
+    private void verificaEmailExiste(String email) {
+        if (verificarSeEmailExiste(email)) {
+            throw new ConflictException("Email já cadastrado: " + email);
+        }
+    }
+
+    private boolean verificarSeEmailExiste(String email) {
+        return usuarioRepository.existsByEmail(email);
     }
 }
