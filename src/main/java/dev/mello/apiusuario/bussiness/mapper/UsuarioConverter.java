@@ -27,6 +27,7 @@ public class UsuarioConverter {
 
     public UsuarioResponseDTO toDto(Usuario usuario) {
         return UsuarioResponseDTO.builder()
+                .id(usuario.getId())
                 .nome(usuario.getNome())
                 .email(usuario.getEmail())
                 .senha(usuario.getSenha())
@@ -79,9 +80,9 @@ public class UsuarioConverter {
                 .rua(endereco.getRua())
                 .numero(endereco.getNumero())
                 .complemento(endereco.getComplemento())
-                .cep(endereco.getCep())
                 .cidade(endereco.getCidade())
                 .estado(endereco.getEstado())
+                .cep(endereco.getCep())
                 .build();
     }
 

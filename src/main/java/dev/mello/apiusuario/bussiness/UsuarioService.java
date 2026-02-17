@@ -161,6 +161,13 @@ public class UsuarioService {
                 .orElseThrow(() -> new NotFoundException("Email não localizado"));
 
         Endereco endereco = mapper.toEndereco(enderecoRequestDTO, usuario.getId());
+        try {
+            Endereco enderecoSaved = salvaEndereco(endereco);
+        } catch (Exception e) {
+            throw new RuntimeException("Erro ao salvar", e);
+        }
+
+
         return mapper.toEnderecoDTO(salvaEndereco(endereco));
     }
 

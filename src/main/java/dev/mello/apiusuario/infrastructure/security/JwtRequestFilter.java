@@ -62,7 +62,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         } catch (ExpiredJwtException ex) {
             throw new UnathorizedException("Erro token expirado");
         } catch (ServletException | IOException ex) {
-            throw new NotFoundException("Erro ao gerar o token");
+            throw new RuntimeException("Erro ao gerar o token", ex);
         }
     }
 }
